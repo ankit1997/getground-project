@@ -46,7 +46,7 @@ const initialState: BookListResponse = {
     books: [],
     args: {
         page: 0,
-        itemsPerPage: 10,
+        itemsPerPage: 5,
         filters: []
     }
 }
@@ -66,7 +66,7 @@ export const slice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(getBooks.pending, (state, action) => {
+            .addCase(getBooks.pending, (state) => {
                 state.loading = true;
             })
             .addCase(getBooks.fulfilled, (state, action) => {

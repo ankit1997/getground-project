@@ -4,13 +4,21 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import TablePagination from "@mui/material/TablePagination";
+import TablePagination, {
+    LabelDisplayedRowsArgs,
+} from "@mui/material/TablePagination";
 import LinearProgress from "@mui/material/LinearProgress";
 import { BookDetails, getBooks, pageChange } from "../redux/slice";
 import { useEffect, useState } from "react";
 import { RootState, useAppDispatch } from "../redux/store";
 import { connect } from "react-redux";
-import { Button, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
+import {
+    changeQueryPage,
+    getColumns,
+    getFilterObject,
+    getPageFromQueryParams,
+} from "./helper";
 
 export interface BooksContainerState {
     books: BookDetails[];
@@ -18,56 +26,6 @@ export interface BooksContainerState {
     page: number;
     itemsPerPage: number;
     filters: any[];
-}
-
-function getColumns() {
-    return [
-        { field: "index", headerName: "S.no." },
-        {
-            field: "book_title",
-            headerName: "Title",
-        },
-        {
-            field: "book_author",
-            headerName: "Author",
-        },
-        {
-            field: "book_publication_year",
-            headerName: "Publication Year",
-        },
-        {
-            field: "book_publication_city",
-            headerName: "Publication city",
-        },
-        {
-            field: "book_publication_country",
-            headerName: "Publication country",
-        },
-        {
-            field: "book_pages",
-            headerName: "# pages",
-        },
-    ];
-}
-
-function changeQueryPage(page_number: number) {
-    var url =
-        window.location.protocol +
-        "//" +
-        window.location.host +
-        window.location.pathname +
-        "?page=" +
-        (page_number + 1);
-    window.history.pushState({ path: url }, "", url);
-}
-
-function getFilterObject(filter: string) {
-    return [
-        {
-            type: "all",
-            values: [filter],
-        },
-    ];
 }
 
 function BooksContainer(props: {
@@ -109,15 +67,11 @@ function BooksContainer(props: {
         );
     }, [filter]);
 
-    /// process page value from query
-    const query = new URLSearchParams(window.location.search);
-    const pageFromQuery = Math.max(parseInt(query.get("page") ?? "1") - 1, 0);
+    const pageFromQuery = getPageFromQueryParams();
     if (pageFromQuery !== props.page) {
         dispatch(
             pageChange({
                 page: pageFromQuery,
-                itemsPerPage: props.itemsPerPage,
-                filters: props.filters,
             })
         );
     }
@@ -130,8 +84,6 @@ function BooksContainer(props: {
         dispatch(
             pageChange({
                 page: page_number,
-                itemsPerPage: props.itemsPerPage,
-                filters: props.filters,
             })
         );
     };
@@ -139,9 +91,7 @@ function BooksContainer(props: {
     const handleRowsPerPageChange = (rowsPerPage: number) => {
         dispatch(
             pageChange({
-                page: props.page,
                 itemsPerPage: rowsPerPage,
-                filters: props.filters,
             })
         );
     };
@@ -159,14 +109,27 @@ function BooksContainer(props: {
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                     setFilter(event.target.value);
                 }}
+                style={{ width: "400px" }}
             />
             <TableContainer>
+                {props.page !== 0 &&
+                    filter !== null &&
+                    filter !== undefined &&
+                    filter.length > 0 && (
+                        <small>Go to first page after using filter above</small>
+                    )}
                 {props.loading && <LinearProgress />}
                 <Table sx={{ minWidth: 650 }} aria-label="simple table">
                     <TableHead>
                         <TableRow>
                             {columns.map((col) => (
-                                <TableCell key={col.field}>
+                                <TableCell
+                                    key={col.field}
+                                    style={{
+                                        fontWeight: "bold",
+                                        minWidth: "200px",
+                                    }}
+                                >
                                     {col.headerName}
                                 </TableCell>
                             ))}
@@ -200,12 +163,22 @@ function BooksContainer(props: {
                 page={props.page}
                 onPageChange={handlePageChange}
                 rowsPerPage={props.itemsPerPage}
-                rowsPerPageOptions={[10, 20]}
+                rowsPerPageOptions={[5, 10, 20]}
                 onRowsPerPageChange={(event) =>
                     handleRowsPerPageChange(parseInt(event.target.value))
                 }
                 showFirstButton
                 showLastButton
+                labelDisplayedRows={(
+                    paginationInfo: LabelDisplayedRowsArgs
+                ) => {
+                    const { from, to, count, page } = paginationInfo;
+                    return (
+                        <>
+                            Page {page + 1} with Rows {from} - {to} of {count}
+                        </>
+                    );
+                }}
             />
         </>
     );
